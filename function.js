@@ -25,6 +25,9 @@ exports.enforcer = (req, res) => {
         console.log(`Got ${members.size} members`);
         const inEnforcedChannel = members.filter(member => member.voice?.channel?.id === process.env['ENFORCED_CHANNEL_ID']);
         console.log(`There are currently ${inEnforcedChannel.size} members in the channel!`);
+        if(inEnforcedChannel.size < 1) {
+          return Promise.reject({status: 404});
+        }
         return Promise.all(inEnforcedChannel.map(member => {
           return member.voice.setMute(true).then(() =>  member);
         }));
@@ -34,13 +37,19 @@ exports.enforcer = (req, res) => {
         return Promise.all([members, tempMember.voice.channel.join()]);
       })
       .then(([members, connection]) => {
-        const noise = fs.createReadStream(path.join(__dirname, 'noises', 'leave.mp3'));
-        return new Promise((resolve, reject) => {
-          connection.play(noise).on('finish', () => {
-            connection.disconnect();
-            resolve(members);
+        try {
+          const noise = fs.createReadStream(path.join(__dirname, 'noises', process.env['NOISE_TO_PLAY'] || 'leave.mp3'));
+          return new Promise((resolve, reject) => {
+            connection.play(noise)
+              .on('finish', () => {
+                connection.disconnect();
+                resolve(members);
+              })
+              .on('error', (err) => reject(err));
           });
-        });
+        } catch (err) {
+          return Promise.reject(err)
+        }
       })
       .then(members => {
         return Promise.all(members.map(member => {
@@ -51,8 +60,8 @@ exports.enforcer = (req, res) => {
         res.status(200).send();
       })
       .catch(err => {
-        console.error(`Failed!`, err);
-        res.status(500).send();
+        console.error(`Failed! ${err}`, err);
+        res.status(err?.status || 500).send();
       });
   });
 
