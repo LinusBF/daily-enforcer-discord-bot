@@ -1,2 +1,2 @@
 const func = require('./function');
-func.enforcer({query: {"API_KEY": process.env['API_KEY']}});
+func.mute_enforcer({query: {"API_KEY": process.env['API_KEY']}});
