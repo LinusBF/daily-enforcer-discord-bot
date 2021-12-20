@@ -34,9 +34,7 @@ const muteEnforcer = (req, res) => {
           return Promise.reject({status: 404});
         }
         return Promise.all([
-          inEnforcedChannel.map(member => {
-            return member.voice.setMute(true).then(() => member);
-          }),
+          inEnforcedChannel,
           guildCache.channels.cache.get(process.env['ENFORCED_CHANNEL_ID']),
         ]);
       })
@@ -118,7 +116,36 @@ const moveEnforcer = (req, res) => {
   client.login(process.env['DISCORD_BOT_TOKEN']);
 };
 
+const its1337 = (req, res) => {
+  if(req.query.API_KEY !== process.env['API_KEY']) {
+    res.status(401).send('Fuck off');
+    return;
+  }
+  // Create an instance of a Discord client
+  const client = new Discord.Client();
+
+  client.on('ready', () => {
+    console.log('I am ready!');
+
+    client.channels.fetch(process.env['HANG_OUT_CHAT_ID'])
+      .then((channel) => {
+        return channel.client.postMessage("Happy 1337! :tada::tada::tada:")
+      })
+      .then(() => {
+        res.status(200).send();
+      })
+      .catch(err => {
+        console.error(`Failed! ${err}`, err);
+        res.status(err?.status || 500).send();
+    });
+  });
+
+  // Log our bot in using the token from https://discord.com/developers/applications
+  client.login(process.env['DISCORD_BOT_TOKEN']);
+};
+
 module.exports = {
   mute_enforcer: muteEnforcer,
   move_enforcer: moveEnforcer,
+  leet_trigger: its1337,
 }
