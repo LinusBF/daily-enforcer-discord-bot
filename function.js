@@ -126,10 +126,13 @@ const its1337 = (req, res) => {
 
   client.on('ready', () => {
     console.log('I am ready!');
-
-    client.channels.fetch(process.env['HANG_OUT_CHAT_ID'])
+    client.guilds.fetch(process.env['GUILD_ID'])
+      .then((guild) => {
+        console.log(`Got guild ${guild.name}`);
+        return guild.channels.cache.get(process.env['HANG_OUT_CHAT_ID']);
+      })
       .then((channel) => {
-        return channel.client.postMessage("Happy 1337! :tada::tada::tada:")
+        return channel.send("Happy 1337! :tada::tada::tada:");
       })
       .then(() => {
         res.status(200).send();
